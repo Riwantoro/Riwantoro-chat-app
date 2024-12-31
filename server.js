@@ -1,35 +1,30 @@
 const express = require('express');
 const http = require('http');
-const socketIo = require('socket.io');
 const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
 
-// Configure CORS for Socket.IO
-const io = socketIo(server, {
-    cors: {
-        origin: "https://riwantoro-chat-app.vercel.app", // Allow requests from your Vercel domain
-        methods: ["GET", "POST"]
-    }
-});
-
 // Serve static files from the "public" directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Handle socket connections
-io.on('connection', (socket) => {
-    console.log('A user connected');
+// Store messages in memory
+let messages = [];
 
-    // Listen for chat messages
-    socket.on('chat message', (msg) => {
-        io.emit('chat message', msg); // Broadcast the message to all clients
-    });
+// Endpoint to send a message
+app.post('/send-message', express.json(), (req, res) => {
+    const { message } = req.body;
+    if (message) {
+        messages.push(message); // Add the message to the list
+        res.status(200).json({ success: true });
+    } else {
+        res.status(400).json({ success: false, error: 'Message is required' });
+    }
+});
 
-    // Handle user disconnect
-    socket.on('disconnect', () => {
-        console.log('User disconnected');
-    });
+// Endpoint to fetch messages
+app.get('/get-messages', (req, res) => {
+    res.status(200).json({ messages });
 });
 
 // Start the server
