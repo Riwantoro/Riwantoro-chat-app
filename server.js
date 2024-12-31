@@ -5,12 +5,7 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, {
-    cors: {
-        origin: "https://riwantoro-chat-app.vercel.app",
-        methods: ["GET", "POST"]
-    }
-});
+const io = socketIo(server);
 
 // Serve static files from the "public" directory
 app.use(express.static(path.join(__dirname, 'public')));

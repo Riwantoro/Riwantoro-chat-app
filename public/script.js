@@ -1,4 +1,4 @@
-const socket = io('https://riwantoro-chat-app.vercel.app');
+const socket = io();
 
 const form = document.getElementById('chat-form');
 const input = document.getElementById('message-input');
