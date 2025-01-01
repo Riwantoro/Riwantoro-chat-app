@@ -1,41 +1,48 @@
 const express = require('express');
 const http = require('http');
 const path = require('path');
-const { Server } = require('socket.io'); // Import Socket.IO
+const { Server } = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server); // Initialize Socket.IO
 
-// Serve static files from the "public" directory
+// Konfigurasi Socket.IO
+const io = new Server(server, {
+    cors: {
+        origin: "*", // Izinkan semua domain (atau ganti dengan URL Vercel Anda)
+        methods: ["GET", "POST"],
+    },
+});
+
+// Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Store messages in memory
+// Simpan pesan di memori (sementara)
 let messages = [];
 
-// Socket.IO connection handler
+// Handle koneksi Socket.IO
 io.on('connection', (socket) => {
     console.log('A user connected');
 
-    // Send existing messages to the newly connected user
+    // Kirim pesan yang sudah ada ke pengguna baru
     socket.emit('initial-messages', messages);
 
-    // Handle new messages
+    // Handle pesan baru
     socket.on('send-message', (message) => {
         if (message) {
-            messages.push(message); // Add the message to the list
-            io.emit('new-message', message); // Broadcast the message to all clients
+            messages.push(message); // Simpan pesan
+            io.emit('new-message', message); // Kirim pesan ke semua pengguna
         }
     });
 
-    // Handle user disconnection
+    // Handle disconnect
     socket.on('disconnect', () => {
         console.log('A user disconnected');
     });
 });
 
-// Start the server
+// Start server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
