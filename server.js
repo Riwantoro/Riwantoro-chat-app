@@ -1,9 +1,11 @@
 const express = require('express');
 const http = require('http');
 const path = require('path');
+const { Server } = require('socket.io'); // Import Socket.IO
 
 const app = express();
 const server = http.createServer(app);
+const io = new Server(server); // Initialize Socket.IO
 
 // Serve static files from the "public" directory
 app.use(express.static(path.join(__dirname, 'public')));
@@ -11,20 +13,25 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Store messages in memory
 let messages = [];
 
-// Endpoint to send a message
-app.post('/send-message', express.json(), (req, res) => {
-    const { message } = req.body;
-    if (message) {
-        messages.push(message); // Add the message to the list
-        res.status(200).json({ success: true });
-    } else {
-        res.status(400).json({ success: false, error: 'Message is required' });
-    }
-});
+// Socket.IO connection handler
+io.on('connection', (socket) => {
+    console.log('A user connected');
 
-// Endpoint to fetch messages
-app.get('/get-messages', (req, res) => {
-    res.status(200).json({ messages });
+    // Send existing messages to the newly connected user
+    socket.emit('initial-messages', messages);
+
+    // Handle new messages
+    socket.on('send-message', (message) => {
+        if (message) {
+            messages.push(message); // Add the message to the list
+            io.emit('new-message', message); // Broadcast the message to all clients
+        }
+    });
+
+    // Handle user disconnection
+    socket.on('disconnect', () => {
+        console.log('A user disconnected');
+    });
 });
 
 // Start the server
