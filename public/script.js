@@ -2,33 +2,46 @@ const messageInput = document.getElementById('message-input');
 const chatForm = document.getElementById('chat-form');
 const messagesList = document.getElementById('messages');
 
-// Initialize Socket.IO
-const socket = io();
+// Fungsi untuk mengambil pesan dari server
+const fetchMessages = () => {
+    fetch('/messages')
+        .then((response) => response.json())
+        .then((data) => {
+            messagesList.innerHTML = ''; // Bersihkan daftar pesan
+            data.forEach((msg) => addMessageToUI(msg)); // Tambahkan pesan ke UI
+        });
+};
 
-// Function to add a message to the UI
+// Fungsi untuk mengirim pesan ke server
+const sendMessage = (message) => {
+    fetch('/messages', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message }),
+    });
+};
+
+// Fungsi untuk menambahkan pesan ke UI
 const addMessageToUI = (message) => {
     const li = document.createElement('li');
     li.textContent = message;
     messagesList.appendChild(li);
-    messagesList.scrollTop = messagesList.scrollHeight; // Auto-scroll to the latest message
+    messagesList.scrollTop = messagesList.scrollHeight; // Auto-scroll ke pesan terbaru
 };
 
-// Handle initial messages when the page loads
-socket.on('initial-messages', (messages) => {
-    messagesList.innerHTML = ''; // Clear the messages list
-    messages.forEach((msg) => addMessageToUI(msg));
-});
+// Polling untuk mengambil pesan baru setiap detik
+setInterval(fetchMessages, 1000);
 
-// Handle new messages from the server
-socket.on('new-message', (message) => {
-    addMessageToUI(message);
-});
-
-// Handle form submission
+// Kirim pesan saat form di-submit
 chatForm.addEventListener('submit', (e) => {
     e.preventDefault();
     if (messageInput.value) {
-        socket.emit('send-message', messageInput.value); // Send the message to the server
-        messageInput.value = ''; // Clear the input field
+        sendMessage(messageInput.value);
+        messageInput.value = ''; // Bersihkan input
     }
 });
+
+// Ambil pesan saat halaman dimuat
+fetchMessages();
